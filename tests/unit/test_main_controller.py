@@ -229,6 +229,67 @@ class TestMainControllerLogic(unittest.TestCase):
         
         self.assertIsNone(operation_status['current_operation'])
         self.assertFalse(operation_status['is_processing'])
+    
+    def test_browser_closing_after_download(self):
+        """Test that browser is closed after download initiation."""
+        from unittest.mock import Mock
+        
+        # Create a mock main controller with browser service
+        controller = Mock()
+        controller.browser_service = Mock()
+        controller.logger = Mock()
+        
+        # Mock browser service methods
+        controller.browser_service.is_browser_open.return_value = True
+        controller.browser_service.close_browser.return_value = True
+        
+        # Import the actual method to test
+        from youtube_mp3_downloader.controllers.main_controller import MainController
+        
+        # Create a real instance to get the method
+        real_controller = MainController()
+        real_controller.browser_service = controller.browser_service
+        real_controller.logger = controller.logger
+        
+        # Call the browser closing method
+        real_controller._close_browser_after_download()
+        
+        # Verify browser was checked and closed
+        controller.browser_service.is_browser_open.assert_called_once()
+        controller.browser_service.close_browser.assert_called_once()
+        controller.logger.info.assert_called_once_with("Browser closed after download initiation")
+    
+    def test_browser_closing_handles_errors(self):
+        """Test that browser closing handles errors gracefully."""
+        from unittest.mock import Mock
+        
+        # Create a mock main controller with browser service
+        controller = Mock()
+        controller.browser_service = Mock()
+        controller.logger = Mock()
+        
+        # Mock browser service to raise an exception
+        controller.browser_service.is_browser_open.side_effect = Exception("Test error")
+        
+        # Import the actual method to test
+        from youtube_mp3_downloader.controllers.main_controller import MainController
+        
+        # Create a real instance to get the method
+        real_controller = MainController()
+        real_controller.browser_service = controller.browser_service
+        real_controller.logger = controller.logger
+        
+        # Call the browser closing method - should not raise exception
+        try:
+            real_controller._close_browser_after_download()
+            # Should reach here without exception
+            success = True
+        except Exception:
+            success = False
+        
+        # Verify it handled the error gracefully
+        assert success is True
+        controller.logger.warning.assert_called_once()
 
 
 if __name__ == '__main__':

@@ -57,3 +57,15 @@
 2025-12-25 16:22:08,297 - __main__ - INFO - Starting YouTube MP3 Downloader application
 2025-12-25 16:26:26,745 - __main__ - INFO - Application started successfully
 2025-12-25 16:26:26,746 - __main__ - INFO - Application shutdown
+2025-12-25 18:56:25,697 - __main__ - INFO - Starting YouTube MP3 Downloader application
+2025-12-25 18:57:55,908 - youtube_mp3_downloader.services.browser_service - INFO - Chrome WebDriver initialized successfully
+2025-12-25 18:57:56,265 - youtube_mp3_downloader.services.browser_service - INFO - Page loaded successfully
+2025-12-25 18:57:56,274 - youtube_mp3_downloader.services.browser_service - INFO - Successfully navigated to mp3cow.com
+2025-12-25 18:57:56,532 - youtube_mp3_downloader.services.browser_service - INFO - Successfully input YouTube URL: https://www.youtube.com/watch?v=FSOz83aPO28&list=RDFSOz83aPO28&start_radio=1
+2025-12-25 18:57:56,668 - youtube_mp3_downloader.services.browser_service - INFO - Successfully clicked convert button
+2025-12-25 18:57:56,669 - youtube_mp3_downloader.services.browser_service - INFO - Waiting 5 seconds for conversion to complete...
+2025-12-25 18:58:01,699 - youtube_mp3_downloader.services.browser_service - INFO - Found download button using strategy: //button[contains(text(), 'Download MP3')]
+2025-12-25 18:58:02,339 - youtube_mp3_downloader.services.browser_service - INFO - Successfully clicked download button
+2025-12-25 18:58:16,781 - youtube_mp3_downloader.services.browser_service - INFO - Browser closed successfully
+2025-12-25 19:00:01,283 - __main__ - INFO - Application started successfully
+2025-12-25 19:00:01,284 - __main__ - INFO - Application shutdown

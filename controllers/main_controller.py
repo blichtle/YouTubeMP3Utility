@@ -8,6 +8,7 @@ to implement the complete download and tagging workflow.
 
 import threading
 import time
+import logging
 from typing import Optional, Dict, Any
 from datetime import datetime
 
@@ -42,6 +43,9 @@ class MainController:
     
     def __init__(self):
         """Initialize the main controller with all required services."""
+        # Initialize logging
+        self.logger = logging.getLogger(__name__)
+        
         # Initialize error handler first
         self.error_handler = ErrorHandler()
         
@@ -128,6 +132,9 @@ class MainController:
             success = self._execute_browser_automation(user_input.youtube_url)
             if not success:
                 return  # Error already handled in browser automation
+            
+            # Close browser immediately after download is initiated
+            self._close_browser_after_download()
             
             # Step 2: Download Monitoring (Requirements 3.1-3.4)
             self.current_operation = "download_monitoring"
@@ -216,6 +223,20 @@ class MainController:
             self.error_handler.handle_error(YouTubeDownloaderError(error_msg), "browser_automation")
             self.gui_controller.show_error(error_msg)
             return False
+    
+    def _close_browser_after_download(self) -> None:
+        """
+        Close the browser window after download has been initiated.
+        This provides a cleaner user experience by not leaving browser windows open.
+        """
+        try:
+            if self.browser_service and self.browser_service.is_browser_open():
+                self.browser_service.close_browser()
+                self.logger.info("Browser closed after download initiation")
+        except Exception as e:
+            # Log the error but don't fail the workflow
+            self.logger.warning(f"Failed to close browser after download: {str(e)}")
+            # Don't raise exception as this is not critical to the workflow
     
     def _execute_download_monitoring(self) -> Optional[DownloadResult]:
         """
