@@ -1,6 +1,6 @@
 # YouTube MP3 Downloader Workflow
 
-## Complete Download Process
+## Single Download Process
 
 ### 1. Browser Automation
 - Open Chrome browser
@@ -33,12 +33,63 @@
 - Re-enable UI controls
 - Ready for next operation
 
+## Batch Processing Workflow
+
+### 1. Spreadsheet Loading
+- User clicks "Load Spreadsheet" button
+- Select CSV or Excel file with columns: YouTubeURL, Artist, Title, Album, TrackNumber
+- Validate file format and column structure (case insensitive matching)
+- Display preview of loaded data
+- User confirms to start batch processing
+
+### 2. Batch Processing Loop
+For each row in the spreadsheet:
+
+#### 2.1 Row Processing
+- Extract data from current row
+- Populate form fields automatically
+- Update batch progress bar and status
+
+#### 2.2 Single Download Workflow
+- Execute complete single download process (steps 1-4 above)
+- Browser automation → Download monitoring → Browser cleanup → Metadata application
+
+#### 2.3 Row Completion
+- Clear form fields
+- Advance to next row
+- Update progress indicators
+
+### 3. Batch Completion
+- Display completion message
+- Reset batch processing state
+- Re-enable all UI controls
+
+### 4. Error Handling in Batch Mode
+- Skip invalid rows and continue processing
+- Display error messages for failed downloads
+- Maintain progress tracking even with errors
+- Allow user to cancel batch processing
+
 ## Key Timing Points
 
+### Single Download
 - **Browser Opens**: At start of process
 - **Download Initiated**: When download button is clicked
 - **Browser Closes**: After download file is detected and complete ✅
 - **Metadata Applied**: After browser is closed
 - **Process Complete**: After metadata is successfully applied
 
-This ensures the browser stays open long enough for the download to complete while still providing automatic cleanup for a better user experience.
+### Batch Processing
+- **Batch Starts**: After user confirms spreadsheet preview
+- **Per Row**: Complete single download workflow for each row
+- **Progress Updates**: Real-time progress bar and status updates
+- **Batch Complete**: After all rows processed or user cancellation
+
+## Threading Model
+
+- **Main Thread**: GUI updates and user interaction
+- **Batch Processing Thread**: Handles batch workflow to prevent GUI blocking
+- **Download Monitoring**: File system watching in separate thread
+- **Coordination**: Event-based signaling between threads for download completion
+
+This ensures the browser stays open long enough for each download to complete while providing automatic cleanup and seamless batch processing for multiple files.

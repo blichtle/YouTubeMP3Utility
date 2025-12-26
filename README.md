@@ -12,6 +12,7 @@ A Python desktop application that automates the process of downloading MP3 files
 - **Clear All Fields button** - Easily reset the form to start a new session
 - **Load and Edit MP3 Files** - Select existing MP3 files to view and edit their metadata
 - **Save Changes to MP3** - Update metadata tags (Artist, Title, Album, Track Number) in existing files
+- **Batch Processing from Spreadsheets** - Load CSV/Excel files to automatically process multiple downloads
 - Progress tracking and status updates during download process
 - Comprehensive error handling and validation
 - **Auto-close Browser** - Browser window closes automatically after download completes
@@ -85,11 +86,18 @@ Follow the installation steps below.
 - Fill in the YouTube URL and desired metadata
 - Click "Download & Tag MP3" to download and apply metadata
 
-**2. Edit Existing MP3 Files (New functionality):**
+**2. Edit Existing MP3 Files:**
 - Click "Load MP3 File" to select an existing MP3 file
 - The form will populate with the current metadata
 - Edit any fields as desired
 - Click "Save Changes to MP3" to update the file
+
+**3. Batch Processing from Spreadsheets (New!):**
+- Click "Load Spreadsheet" to select a CSV or Excel file
+- Spreadsheet should have columns: YouTubeURL, Artist, Title, Album, TrackNumber (case insensitive)
+- Confirm to start automatic batch processing
+- Watch as each row is processed automatically with progress tracking
+- Use "Clear All Fields" to reset batch processing state
 
 **With virtual environment (recommended):**
 ```bash
@@ -157,14 +165,24 @@ python test_gui.py
 
 This opens the GUI with test data so you can verify both the clear button and MP3 loading functionality work correctly.
 
-**Testing with your own MP3 files:**
+**Testing batch processing:**
 
-To test the MP3 editing feature:
+To test the batch processing feature:
 1. Run the application: `./run.sh`
-2. Click "Load MP3 File" 
-3. Select any MP3 file from your computer
-4. Edit the metadata fields
-5. Click "Save Changes to MP3" to update the file
+2. Click "Load Spreadsheet"
+3. Select the included `sample_batch.csv` file (or create your own)
+4. Confirm to start batch processing
+5. Watch as each row is processed automatically
+
+You can also test the batch processor directly:
+```bash
+python test_batch_processor.py
+```
+
+Or run the complete workflow test:
+```bash
+python test_complete_workflow.py
+```
 
 ## Project Structure
 
@@ -177,6 +195,7 @@ youtube_mp3_downloader/
 │   ├── metadata_service.py # Enhanced with metadata reading capabilities
 │   ├── browser_service.py
 │   ├── download_monitor.py
+│   ├── batch_processor.py # NEW: Batch processing from spreadsheets
 │   └── error_handler.py
 ├── models/              # Data models
 ├── tests/               # Unit, integration, and property tests
@@ -190,6 +209,9 @@ youtube_mp3_downloader/
 ├── run.sh              # Run script for easy execution
 ├── test_core.py        # Core functionality test script
 ├── test_gui.py         # GUI functionality test script
+├── test_batch_processor.py # NEW: Batch processing test script
+├── test_complete_workflow.py # NEW: Complete workflow test script
+├── sample_batch.csv    # NEW: Sample spreadsheet for batch processing
 └── README.md           # This file
 ```
 
@@ -224,6 +246,30 @@ Application settings can be modified in `config.py`, including:
 
 ## New in This Version
 
+### Batch Processing from Spreadsheets
+- **Load CSV/Excel Files**: Click "Load Spreadsheet" to select CSV or Excel files with multiple YouTube URLs
+- **Case-Insensitive Columns**: Supports flexible column naming (YouTubeURL, youtube_url, YouTube URL, etc.)
+- **Automatic Processing**: Iterates through each row automatically, populating form fields and triggering downloads
+- **Progress Tracking**: Real-time progress bar showing current row and percentage completion
+- **Error Recovery**: Handles invalid rows gracefully and continues processing
+- **Threading**: Non-blocking batch processing that doesn't freeze the GUI
+- **Integration**: Works seamlessly with existing features like auto-close browser and clear fields
+
+### Spreadsheet Format
+Your CSV or Excel file should have these columns (case insensitive):
+- **YouTubeURL**: The YouTube video URL to download
+- **Artist**: Artist name for metadata
+- **Title**: Song title for metadata  
+- **Album**: Album name for metadata
+- **TrackNumber**: Track number for metadata (integer)
+
+Example CSV:
+```csv
+YouTubeURL,Artist,Title,Album,TrackNumber
+https://www.youtube.com/watch?v=dQw4w9WgXcQ,Rick Astley,Never Gonna Give You Up,Whenever You Need Somebody,1
+https://www.youtube.com/watch?v=9bZkp7q19f0,PSY,Gangnam Style,PSY 6 (Six Rules) Part 1,2
+```
+
 ### MP3 Metadata Editor
 - **Load Existing MP3 Files**: Click "Load MP3 File" to select and load any MP3 file from your computer
 - **Auto-populate Form**: The application automatically reads and displays the current metadata (Artist, Title, Album, Track Number)
@@ -233,9 +279,9 @@ Application settings can be modified in `config.py`, including:
 - **Validation**: Comprehensive validation of MP3 files and metadata before processing
 
 ### Enhanced User Experience
-- **Clear All Fields**: Reset the entire form with one click
-- **Smart Button Management**: Interface adapts based on current mode (download vs. edit)
-- **Progress Tracking**: Real-time feedback during metadata operations
+- **Clear All Fields**: Reset the entire form with one click (also resets batch processing state)
+- **Smart Button Management**: Interface adapts based on current mode (download vs. edit vs. batch)
+- **Progress Tracking**: Real-time feedback during metadata operations and batch processing
 - **Error Handling**: Detailed error messages and recovery options
 - **Auto-close Browser**: Browser window automatically closes after download completes for cleaner experience
 

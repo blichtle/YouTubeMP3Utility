@@ -90,3 +90,23 @@ A Python desktop application that automates the process of downloading MP3 files
 4. WHEN monitoring for download, THE GUI SHALL show "Waiting for download..." status
 5. WHEN applying metadata, THE GUI SHALL show "Adding metadata..." status
 6. WHEN the process completes successfully, THE GUI SHALL display a success message with the final file location
+
+### Requirement 7: Batch Processing
+
+**User Story:** As a user, I want to load a spreadsheet with multiple YouTube URLs and metadata, so that I can automatically process multiple downloads without manual intervention for each one.
+
+#### Acceptance Criteria
+
+1. THE GUI SHALL provide a "Load Spreadsheet" button to select CSV or Excel files
+2. WHEN a spreadsheet is loaded, THE Application SHALL validate it contains required columns: YouTubeURL, Artist, Title, Album, TrackNumber (case insensitive)
+3. WHEN validation passes, THE Application SHALL display a preview of the loaded data and ask for confirmation
+4. WHEN batch processing starts, THE Application SHALL iterate through each row automatically
+5. FOR each row, THE Application SHALL populate the form fields with the row data
+6. FOR each row, THE Application SHALL trigger the download and metadata application process
+7. WHEN a download completes, THE Application SHALL automatically clear the form and proceed to the next row
+8. THE GUI SHALL display a progress bar showing current row and percentage completion
+9. THE GUI SHALL display status text showing which row is currently being processed
+10. WHEN batch processing completes, THE Application SHALL display a completion message
+11. WHEN "Clear All Fields" is clicked during or after batch processing, THE Application SHALL reset the batch state and progress indicators
+12. THE Application SHALL handle invalid rows gracefully and continue processing remaining rows
+13. THE Application SHALL process batch operations in a separate thread to avoid blocking the GUI

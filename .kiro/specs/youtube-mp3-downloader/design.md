@@ -15,9 +15,11 @@ graph TB
     A[GUI Controller] --> B[Browser Automation Service]
     A --> C[Download Monitor Service]
     A --> D[Metadata Service]
+    A --> K[Batch Processor Service]
     B --> E[Selenium WebDriver]
     C --> F[File System Watcher]
     D --> G[Mutagen Library]
+    K --> L[Pandas Library]
     A --> H[Main Application Controller]
     H --> I[Error Handler]
     H --> J[Progress Tracker]
@@ -28,7 +30,8 @@ graph TB
 1. **Tkinter for GUI**: Chosen for its simplicity, built-in availability with Python, and sufficient functionality for this application's needs
 2. **Selenium WebDriver**: Selected for reliable browser automation with robust element location and interaction capabilities
 3. **Mutagen for Metadata**: Preferred over eyed3 for its comprehensive format support and active maintenance
-4. **Service-based Architecture**: Each major function (GUI, automation, monitoring, metadata) is implemented as a separate service for maintainability and testability
+4. **Pandas for Batch Processing**: Selected for robust CSV/Excel handling with flexible column matching and data validation
+5. **Service-based Architecture**: Each major function (GUI, automation, monitoring, metadata, batch processing) is implemented as a separate service for maintainability and testability
 
 ## Components and Interfaces
 
@@ -67,6 +70,16 @@ graph TB
   - `apply_metadata(file_path, metadata_dict)`: Writes new metadata
   - `validate_mp3_file(file_path)`: Ensures file is valid MP3
   - `backup_original(file_path)`: Creates backup before modification
+
+### Batch Processor Service (`batch_processor.py`)
+- **Purpose**: Handles spreadsheet loading and batch processing workflow
+- **Key Methods**:
+  - `load_spreadsheet(file_path)`: Loads CSV/Excel files with validation
+  - `get_current_row_data()`: Returns UserInput object for current row
+  - `advance_to_next_row()`: Moves to next row in batch
+  - `has_more_rows()`: Checks if more rows remain to process
+  - `get_progress_info()`: Returns current progress information
+  - `reset_batch()`: Resets batch processing state
 
 ### Main Application Controller (`main_controller.py`)
 - **Purpose**: Orchestrates the entire download and tagging process
@@ -179,6 +192,10 @@ class MetadataInfo:
 ### Property 15: Progress Tracking
 *For any* process execution, the GUI should display progress indicators at the start and update the status as each major step completes, culminating in a success message with file location
 **Validates: Requirements 6.1, 6.2, 6.6**
+
+### Property 16: Batch Processing Workflow
+*For any* valid spreadsheet with YouTube URLs and metadata, the batch processor should successfully load the file, validate column structure, iterate through each row automatically, and complete all downloads with proper progress tracking
+**Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 7.11, 7.12, 7.13**
 
 <function_calls>
 <invoke name="prework">
