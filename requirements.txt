@@ -10,3 +10,7 @@ pytest-mock>=3.12.0
 # GUI dependencies (Tkinter is built-in with Python)
 # File system monitoring
 watchdog>=3.0.0
+
+# Spreadsheet processing dependencies
+pandas>=2.0.0
+openpyxl>=3.1.0

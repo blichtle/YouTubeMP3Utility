@@ -156,6 +156,9 @@ class MainController:
             self.current_operation = "completed"
             self.gui_controller.show_success(download_result.file_path)
             
+            # Notify GUI that download is complete (for batch processing)
+            self.gui_controller.notify_download_complete()
+            
         except Exception as e:
             # Handle any unexpected errors
             error_msg = f"Unexpected error during {self.current_operation}: {str(e)}"

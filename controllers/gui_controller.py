@@ -10,11 +10,13 @@ from tkinter import ttk, messagebox, filedialog
 from typing import Callable, Optional
 import re
 import os
+import threading
 
 from ..models.data_models import UserInput, MetadataInfo
-from ..exceptions import InputValidationError, MetadataError
+from ..exceptions import InputValidationError, MetadataError, YouTubeDownloaderError
 from ..services.error_handler import ErrorHandler
 from ..services.metadata_service import MetadataService
+from ..services.batch_processor import BatchProcessor
 
 
 class GUIController:
@@ -43,8 +45,16 @@ class GUIController:
         self.file_path_label = None
         self.current_mp3_file = None
         
+        # Batch processing components
+        self.load_batch_button = None
+        self.batch_progress_bar = None
+        self.batch_status_label = None
+        self.batch_file_label = None
+        self.is_batch_processing = False
+        
         # Initialize services
         self.metadata_service = MetadataService()
+        self.batch_processor = BatchProcessor()
         
         # Initialize error handler with GUI callback
         self.error_handler = ErrorHandler(gui_error_callback=self.show_error)
@@ -59,7 +69,7 @@ class GUIController:
         # Create main window
         self.root = tk.Tk()
         self.root.title("YouTube MP3 Downloader")
-        self.root.geometry("600x500")
+        self.root.geometry("700x600")
         self.root.resizable(False, False)
         
         # Create main frame
@@ -79,16 +89,19 @@ class GUIController:
         # MP3 file loading section
         self._create_mp3_loading_section(main_frame)
         
+        # Batch processing section
+        self._create_batch_processing_section(main_frame)
+        
         # Separator
         separator = ttk.Separator(main_frame, orient='horizontal')
-        separator.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 10))
+        separator.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 10))
         
         # Create input fields
         self._create_input_fields(main_frame)
         
         # Create button frame for submit and clear buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=9, column=0, columnspan=2, pady=(20, 10), 
+        button_frame.grid(row=10, column=0, columnspan=2, pady=(20, 10), 
                          sticky=(tk.W, tk.E))
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
@@ -141,6 +154,50 @@ class GUIController:
                                font=("Arial", 8), foreground="gray")
         instructions.grid(row=1, column=0, columnspan=2, pady=(5, 0), sticky=tk.W)
     
+    def _create_batch_processing_section(self, parent_frame: ttk.Frame) -> None:
+        """
+        Creates the batch processing section for spreadsheet uploads.
+        
+        Args:
+            parent_frame: The parent frame to add components to
+        """
+        # Batch processing frame
+        batch_frame = ttk.LabelFrame(parent_frame, text="Batch Processing", padding="10")
+        batch_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        batch_frame.columnconfigure(1, weight=1)
+        
+        # Load batch button
+        self.load_batch_button = ttk.Button(batch_frame, text="Load Spreadsheet", 
+                                           command=self._on_load_batch_clicked)
+        self.load_batch_button.grid(row=0, column=0, padx=(0, 10), sticky=tk.W)
+        
+        # Batch file label
+        self.batch_file_label = ttk.Label(batch_frame, text="No spreadsheet loaded", 
+                                         foreground="gray", font=("Arial", 9))
+        self.batch_file_label.grid(row=0, column=1, sticky=(tk.W, tk.E))
+        
+        # Batch progress bar
+        self.batch_progress_var = tk.DoubleVar()
+        self.batch_progress_bar = ttk.Progressbar(batch_frame, variable=self.batch_progress_var,
+                                                 maximum=100, length=300)
+        self.batch_progress_bar.grid(row=1, column=0, columnspan=2, pady=(5, 0), 
+                                    sticky=(tk.W, tk.E))
+        
+        # Batch status label
+        self.batch_status_label = ttk.Label(batch_frame, text="", 
+                                           font=("Arial", 8), foreground="blue")
+        self.batch_status_label.grid(row=2, column=0, columnspan=2, pady=(2, 0), sticky=tk.W)
+        
+        # Instructions label
+        batch_instructions = ttk.Label(batch_frame, 
+                                      text="Load CSV/Excel with columns: YouTubeURL, Artist, Title, Album, TrackNumber",
+                                      font=("Arial", 8), foreground="gray")
+        batch_instructions.grid(row=3, column=0, columnspan=2, pady=(5, 0), sticky=tk.W)
+        
+        # Initially hide batch progress components
+        self.batch_progress_bar.grid_remove()
+        self.batch_status_label.grid_remove()
+    
     def _create_input_fields(self, parent_frame: ttk.Frame) -> None:
         """
         Creates the input fields for the form.
@@ -149,38 +206,38 @@ class GUIController:
             parent_frame: The parent frame to add fields to
         """
         # YouTube URL field
-        ttk.Label(parent_frame, text="YouTube URL:").grid(row=4, column=0, 
+        ttk.Label(parent_frame, text="YouTube URL:").grid(row=5, column=0, 
                                                           sticky=tk.W, pady=5)
         self.input_fields['youtube_url'] = ttk.Entry(parent_frame, width=50)
-        self.input_fields['youtube_url'].grid(row=4, column=1, sticky=(tk.W, tk.E), 
+        self.input_fields['youtube_url'].grid(row=5, column=1, sticky=(tk.W, tk.E), 
                                              pady=5, padx=(10, 0))
         
         # Artist field
-        ttk.Label(parent_frame, text="Artist:").grid(row=5, column=0, 
+        ttk.Label(parent_frame, text="Artist:").grid(row=6, column=0, 
                                                     sticky=tk.W, pady=5)
         self.input_fields['artist'] = ttk.Entry(parent_frame, width=50)
-        self.input_fields['artist'].grid(row=5, column=1, sticky=(tk.W, tk.E), 
+        self.input_fields['artist'].grid(row=6, column=1, sticky=(tk.W, tk.E), 
                                         pady=5, padx=(10, 0))
         
         # Title field
-        ttk.Label(parent_frame, text="Title:").grid(row=6, column=0, 
+        ttk.Label(parent_frame, text="Title:").grid(row=7, column=0, 
                                                    sticky=tk.W, pady=5)
         self.input_fields['title'] = ttk.Entry(parent_frame, width=50)
-        self.input_fields['title'].grid(row=6, column=1, sticky=(tk.W, tk.E), 
+        self.input_fields['title'].grid(row=7, column=1, sticky=(tk.W, tk.E), 
                                        pady=5, padx=(10, 0))
         
         # Album field
-        ttk.Label(parent_frame, text="Album:").grid(row=7, column=0, 
+        ttk.Label(parent_frame, text="Album:").grid(row=8, column=0, 
                                                    sticky=tk.W, pady=5)
         self.input_fields['album'] = ttk.Entry(parent_frame, width=50)
-        self.input_fields['album'].grid(row=7, column=1, sticky=(tk.W, tk.E), 
+        self.input_fields['album'].grid(row=8, column=1, sticky=(tk.W, tk.E), 
                                        pady=5, padx=(10, 0))
         
         # Track Number field
-        ttk.Label(parent_frame, text="Track Number:").grid(row=8, column=0, 
+        ttk.Label(parent_frame, text="Track Number:").grid(row=9, column=0, 
                                                           sticky=tk.W, pady=5)
         self.input_fields['track_number'] = ttk.Entry(parent_frame, width=50)
-        self.input_fields['track_number'].grid(row=8, column=1, sticky=(tk.W, tk.E), 
+        self.input_fields['track_number'].grid(row=9, column=1, sticky=(tk.W, tk.E), 
                                               pady=5, padx=(10, 0))
     
     def _create_progress_components(self, parent_frame: ttk.Frame) -> None:
@@ -194,13 +251,13 @@ class GUIController:
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(parent_frame, variable=self.progress_var,
                                            maximum=100, length=400)
-        self.progress_bar.grid(row=10, column=0, columnspan=2, pady=(10, 5), 
+        self.progress_bar.grid(row=11, column=0, columnspan=2, pady=(10, 5), 
                               sticky=(tk.W, tk.E))
         
         # Status label (Requirements 6.2, 6.6)
         self.status_label = ttk.Label(parent_frame, text="Ready to download", 
                                      font=("Arial", 10))
-        self.status_label.grid(row=11, column=0, columnspan=2, pady=(5, 0))
+        self.status_label.grid(row=12, column=0, columnspan=2, pady=(5, 0))
         
         # Initially hide progress components
         self.progress_bar.grid_remove()
@@ -376,6 +433,10 @@ class GUIController:
         
         # Hide progress components and reset progress
         self.hide_progress()
+        
+        # Reset batch processing if active
+        if self.is_batch_processing or self.batch_processor.current_batch is not None:
+            self._reset_batch_processing()
         
         # Switch back to download mode if in edit mode
         if self.current_mp3_file:
@@ -708,6 +769,222 @@ class GUIController:
             self.submit_button.config(state='normal')
         if self.clear_button:
             self.clear_button.config(state='normal')
+        
+        # Notify batch processing if active
+        if self.is_batch_processing:
+            self.notify_download_complete()
+    
+    def _on_load_batch_clicked(self) -> None:
+        """
+        Handles the load batch button click event.
+        Opens a file dialog to select a spreadsheet file and loads it for batch processing.
+        """
+        # Check if already processing
+        if self.is_batch_processing:
+            self.show_error("Batch processing is already in progress. Please wait for it to complete.")
+            return
+        
+        # Open file dialog to select spreadsheet file
+        file_path = filedialog.askopenfilename(
+            title="Select Spreadsheet File",
+            filetypes=[
+                ("Spreadsheet files", "*.csv *.xlsx *.xls"),
+                ("CSV files", "*.csv"),
+                ("Excel files", "*.xlsx *.xls"),
+                ("All files", "*.*")
+            ],
+            initialdir=os.path.expanduser("~")
+        )
+        
+        if not file_path:
+            return  # User cancelled
+        
+        try:
+            # Load the spreadsheet
+            success = self.batch_processor.load_spreadsheet(file_path)
+            
+            if success:
+                # Update UI to show loaded file
+                filename = os.path.basename(file_path)
+                self.batch_file_label.config(text=f"Loaded: {filename}", foreground="green")
+                
+                # Show batch progress components
+                self.batch_progress_bar.grid()
+                self.batch_status_label.grid()
+                
+                # Get batch summary
+                summary = self.batch_processor.get_batch_summary()
+                
+                # Show confirmation dialog with preview
+                preview_text = f"Loaded {summary['total_rows']} rows from spreadsheet.\n\nFirst few rows:\n"
+                for i, row in enumerate(summary['preview_rows']):
+                    preview_text += f"{i+1}. {row['artist']} - {row['title']} ({row['youtube_url'][:30]}...)\n"
+                
+                preview_text += f"\nStart batch processing?"
+                
+                if messagebox.askyesno("Batch Processing", preview_text):
+                    self._start_batch_processing()
+                else:
+                    # Reset if user cancels
+                    self._reset_batch_processing()
+            
+        except YouTubeDownloaderError as e:
+            self.show_error(f"Error loading spreadsheet: {e.message}")
+        except Exception as e:
+            self.show_error(f"Unexpected error loading spreadsheet: {str(e)}")
+    
+    def _start_batch_processing(self) -> None:
+        """
+        Start the batch processing workflow in a separate thread.
+        """
+        self.is_batch_processing = True
+        
+        # Disable buttons during batch processing
+        self.load_batch_button.config(state='disabled')
+        self.submit_button.config(state='disabled')
+        if self.clear_button:
+            self.clear_button.config(state='disabled')
+        
+        # Start processing in a separate thread
+        processing_thread = threading.Thread(
+            target=self._execute_batch_processing,
+            daemon=True
+        )
+        processing_thread.start()
+    
+    def _execute_batch_processing(self) -> None:
+        """
+        Execute the batch processing workflow.
+        Processes each row in the spreadsheet automatically.
+        """
+        try:
+            while self.batch_processor.has_more_rows():
+                # Get current row data
+                user_input = self.batch_processor.get_current_row_data()
+                
+                if user_input is None:
+                    # Skip invalid rows
+                    self.batch_processor.advance_to_next_row()
+                    continue
+                
+                # Update progress
+                progress_info = self.batch_processor.get_progress_info()
+                self._update_batch_progress(progress_info, f"Processing row {progress_info['current_row']}: {user_input.artist} - {user_input.title}")
+                
+                # Populate form fields on main thread
+                self.root.after(0, self._populate_form_from_batch, user_input)
+                
+                # Wait a moment for UI update
+                import time
+                time.sleep(0.5)
+                
+                # Trigger download on main thread and wait for completion
+                download_complete = threading.Event()
+                self.root.after(0, self._trigger_batch_download, user_input, download_complete)
+                
+                # Wait for download to complete (with timeout)
+                if download_complete.wait(timeout=600):  # 10 minute timeout per download
+                    # Clear form and advance to next row
+                    self.root.after(0, self._clear_form_fields)
+                    self.batch_processor.advance_to_next_row()
+                else:
+                    # Timeout occurred
+                    self.root.after(0, self.show_error, f"Timeout processing row {progress_info['current_row']}")
+                    break
+            
+            # Batch processing complete
+            self.root.after(0, self._complete_batch_processing)
+            
+        except Exception as e:
+            self.root.after(0, self.show_error, f"Error during batch processing: {str(e)}")
+            self.root.after(0, self._complete_batch_processing)
+    
+    def _populate_form_from_batch(self, user_input: UserInput) -> None:
+        """
+        Populate form fields from batch data.
+        
+        Args:
+            user_input: UserInput object with data to populate
+        """
+        # Clear existing data
+        self._clear_form_fields()
+        
+        # Populate fields
+        self.input_fields['youtube_url'].insert(0, user_input.youtube_url)
+        self.input_fields['artist'].insert(0, user_input.artist)
+        self.input_fields['title'].insert(0, user_input.title)
+        self.input_fields['album'].insert(0, user_input.album)
+        self.input_fields['track_number'].insert(0, str(user_input.track_number))
+    
+    def _trigger_batch_download(self, user_input: UserInput, complete_event: threading.Event) -> None:
+        """
+        Trigger download for batch processing.
+        
+        Args:
+            user_input: UserInput object for download
+            complete_event: Event to signal when download is complete
+        """
+        # Store the completion event for later use
+        self._batch_download_complete_event = complete_event
+        
+        # Trigger the download using the existing callback
+        if self.on_submit_callback:
+            self.on_submit_callback(user_input)
+    
+    def _update_batch_progress(self, progress_info: dict, status_text: str) -> None:
+        """
+        Update batch progress display.
+        
+        Args:
+            progress_info: Progress information dictionary
+            status_text: Status text to display
+        """
+        def update_ui():
+            self.batch_progress_var.set(progress_info['percentage'])
+            self.batch_status_label.config(text=status_text)
+        
+        self.root.after(0, update_ui)
+    
+    def _complete_batch_processing(self) -> None:
+        """
+        Complete batch processing and reset UI.
+        """
+        self.is_batch_processing = False
+        
+        # Re-enable buttons
+        self.load_batch_button.config(state='normal')
+        self.submit_button.config(state='normal')
+        if self.clear_button:
+            self.clear_button.config(state='normal')
+        
+        # Update progress to 100%
+        self.batch_progress_var.set(100)
+        self.batch_status_label.config(text="Batch processing completed!")
+        
+        # Show completion message
+        messagebox.showinfo("Batch Processing Complete", "All downloads have been processed successfully!")
+    
+    def _reset_batch_processing(self) -> None:
+        """
+        Reset batch processing state and UI.
+        """
+        self.is_batch_processing = False
+        self.batch_processor.reset_batch()
+        
+        # Reset UI
+        self.batch_file_label.config(text="No spreadsheet loaded", foreground="gray")
+        self.batch_progress_bar.grid_remove()
+        self.batch_status_label.grid_remove()
+        self.batch_progress_var.set(0)
+    
+    def notify_download_complete(self) -> None:
+        """
+        Notify that a download has completed (called from main controller).
+        This is used to signal batch processing that it can continue.
+        """
+        if hasattr(self, '_batch_download_complete_event') and self._batch_download_complete_event:
+            self._batch_download_complete_event.set()
+            self._batch_download_complete_event = None
     
     def run(self) -> None:
         """
