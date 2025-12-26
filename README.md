@@ -14,7 +14,7 @@ A Python desktop application that automates the process of downloading MP3 files
 - **Save Changes to MP3** - Update metadata tags (Artist, Title, Album, Track Number) in existing files
 - Progress tracking and status updates during download process
 - Comprehensive error handling and validation
-- **Auto-close Browser** - Browser window closes automatically after download starts
+- **Auto-close Browser** - Browser window closes automatically after download completes
 
 ## Quick Start
 
@@ -237,7 +237,7 @@ Application settings can be modified in `config.py`, including:
 - **Smart Button Management**: Interface adapts based on current mode (download vs. edit)
 - **Progress Tracking**: Real-time feedback during metadata operations
 - **Error Handling**: Detailed error messages and recovery options
-- **Auto-close Browser**: Browser window automatically closes after download initiation for cleaner experience
+- **Auto-close Browser**: Browser window automatically closes after download completes for cleaner experience
 
 ## License
 

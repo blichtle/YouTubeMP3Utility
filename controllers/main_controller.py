@@ -133,9 +133,6 @@ class MainController:
             if not success:
                 return  # Error already handled in browser automation
             
-            # Close browser immediately after download is initiated
-            self._close_browser_after_download()
-            
             # Step 2: Download Monitoring (Requirements 3.1-3.4)
             self.current_operation = "download_monitoring"
             self.gui_controller.show_waiting_status()
@@ -143,6 +140,9 @@ class MainController:
             download_result = self._execute_download_monitoring()
             if not download_result or not download_result.success:
                 return  # Error already handled in download monitoring
+            
+            # Close browser after download is complete
+            self._close_browser_after_download()
             
             # Step 3: Metadata Application (Requirements 4.1-4.7)
             self.current_operation = "metadata_application"
@@ -226,13 +226,14 @@ class MainController:
     
     def _close_browser_after_download(self) -> None:
         """
-        Close the browser window after download has been initiated.
-        This provides a cleaner user experience by not leaving browser windows open.
+        Close the browser window after download has been completed and detected.
+        This provides a cleaner user experience by not leaving browser windows open
+        while still allowing the download to complete properly.
         """
         try:
             if self.browser_service and self.browser_service.is_browser_open():
                 self.browser_service.close_browser()
-                self.logger.info("Browser closed after download initiation")
+                self.logger.info("Browser closed after download completion")
         except Exception as e:
             # Log the error but don't fail the workflow
             self.logger.warning(f"Failed to close browser after download: {str(e)}")

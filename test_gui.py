@@ -29,7 +29,7 @@ def main():
     print("   3. Click 'Clear All Fields' to test the clear functionality")
     print("   4. Verify all fields are cleared and form is reset")
     print("   5. Test switching between download mode and edit mode")
-    print("   6. Note: Browser will auto-close after download initiation")
+    print("   6. Note: Browser will auto-close after download completes")
     print("   7. Close the window when done testing")
     print()
     
@@ -47,7 +47,7 @@ def main():
     gui_controller.input_fields['track_number'].insert(0, "1")
     
     print("✅ GUI opened with test data. Test the new MP3 loading and editing functionality!")
-    print("💡 Tip: The browser will automatically close after download starts for a cleaner experience.")
+    print("💡 Tip: The browser will automatically close after the download completes for a cleaner experience.")
     
     # Run the GUI
     gui_controller.run()

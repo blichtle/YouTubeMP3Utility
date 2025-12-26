@@ -257,7 +257,7 @@ class TestMainControllerLogic(unittest.TestCase):
         # Verify browser was checked and closed
         controller.browser_service.is_browser_open.assert_called_once()
         controller.browser_service.close_browser.assert_called_once()
-        controller.logger.info.assert_called_once_with("Browser closed after download initiation")
+        controller.logger.info.assert_called_once_with("Browser closed after download completion")
     
     def test_browser_closing_handles_errors(self):
         """Test that browser closing handles errors gracefully."""
